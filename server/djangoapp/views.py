@@ -2,15 +2,10 @@
 
 import json
 import logging
-from datetime import datetime
-
-from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-
 from .models import CarMake, CarModel
 from .populate import initiate
 from .restapis import analyze_review_sentiments, get_request, post_review
@@ -51,7 +46,6 @@ def logout_request(request):
 # @csrf_exempt
 @csrf_exempt
 def registration(request):
-    context = {}
 
     # Load JSON data from the request body
     data = json.loads(request.body)
@@ -61,12 +55,11 @@ def registration(request):
     last_name = data["lastName"]
     email = data["email"]
     username_exist = False
-    email_exist = False
     try:
         # Check if user already exists
         User.objects.get(username=username)
         username_exist = True
-    except:
+    except Exception:
         # If not, simply log this is a new user
         logger.debug("{} is new user".format(username))
 
@@ -136,12 +129,12 @@ def get_dealer_reviews(request, dealer_id):
 
 
 def add_review(request):
-    if request.user.is_anonymous == False:
+    if not request.user.is_anonymous:
         data = json.loads(request.body)
         try:
-            response = post_review(data)
+           post_review(data)
             return JsonResponse({"status": 200})
-        except:
+        except Exception:
             return JsonResponse({"status": 401, "message": "Error in posting review"})
     else:
         return JsonResponse({"status": 403, "message": "Unauthorized"})
